@@ -1,0 +1,37 @@
+name: Unpack extension source
+
+on:
+  push:
+    paths:
+      - 'apois-whatsapp-crm-v0.9.0.zip'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unpack release source
+        run: |
+          rm -rf .unpack
+          mkdir .unpack
+          unzip -q -o apois-whatsapp-crm-v0.9.0.zip -d .unpack
+          cp -a .unpack/apois-whatsapp-crm/. .
+          rm -rf .unpack
+
+      - name: Commit unpacked source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "build: unpack APOIS WhatsApp CRM v0.9.0 source"
+          git push
