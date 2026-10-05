@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "APOIS WhatsApp CRM",
+  "version": "0.9.0",
+  "description": "CRM local e independente para WhatsApp Web: funil, notas, etiquetas, respostas rápidas, follow-ups, agenda, automações locais, relatórios e backup.",
+  "permissions": ["storage", "notifications", "alarms", "unlimitedStorage"],
+  "host_permissions": ["https://web.whatsapp.com/*"],
+  "background": {"service_worker": "src/background.js"},
+  "content_scripts": [{
+    "matches": ["https://web.whatsapp.com/*"],
+    "js": ["src/storage.js", "src/content.js"],
+    "css": ["src/content.css"],
+    "run_at": "document_idle"
+  }],
+  "action": {
+    "default_title": "Abrir APOIS WhatsApp CRM",
+    "default_icon": {"16": "assets/icon16.png", "32": "assets/icon32.png"}
+  },
+  "options_page": "options.html",
+  "icons": {"16": "assets/icon16.png", "32": "assets/icon32.png", "48": "assets/icon48.png", "128": "assets/icon128.png"}
+}
