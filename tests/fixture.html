@@ -1,0 +1,188 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>APOIS — WhatsApp simulado</title>
+    <style>
+      body {
+        margin: 0;
+        font: 16px Arial;
+        background: #eae6df;
+      }
+      #app {
+        height: 100vh;
+        width: 100%;
+        display: flex;
+      }
+      #pane-side {
+        width: 260px;
+        background: #fff;
+      }
+      #main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+      }
+      #main header {
+        height: 64px;
+        background: #f0f2f5;
+        padding: 18px;
+        box-sizing: border-box;
+      }
+      #messages {
+        flex: 1;
+        overflow: auto;
+        padding: 18px;
+      }
+      .message-out {
+        margin: 12px 0 12px auto;
+        background: #d9fdd3;
+        padding: 16px;
+        width: 60%;
+        white-space: pre-wrap;
+      }
+      footer {
+        display: flex;
+        background: #fff;
+        padding: 18px;
+        gap: 12px;
+      }
+      footer [contenteditable] {
+        min-height: 28px;
+        flex: 1;
+        border: 1px solid #aaa;
+        padding: 8px;
+      }
+      button {
+        cursor: pointer;
+      }
+    </style>
+    <link rel="stylesheet" href="/src/content.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="pane-side">
+        <div role="listitem"><span title="Maria">Maria</span></div>
+        <div role="listitem"><span title="Joana">Joana</span></div>
+      </div>
+      <div id="main">
+        <header><span title="Maria" dir="auto">Maria</span></header>
+        <div id="messages"></div>
+        <footer>
+          <div
+            role="textbox"
+            contenteditable="true"
+            aria-label="Mensagem"
+          ></div>
+          <button aria-label="Enviar">
+            <span data-icon="send">Enviar</span>
+          </button>
+        </footer>
+      </div>
+    </div>
+    <script>
+      const worker = new Worker("/tests/fixture-worker.js");
+      worker.onerror = (event) => console.error("WORKER ERROR", event.message);
+      const pending = new Map();
+      let request = 0;
+      const storageListeners = [];
+      worker.addEventListener("message", (event) => {
+        if (event.data.changed) {
+          storageListeners.forEach((fn) => fn(event.data.changed, "local"));
+          return;
+        }
+        const handler = pending.get(event.data.id);
+        if (handler) {
+          pending.delete(event.data.id);
+          handler(event.data.result);
+        }
+      });
+      function rpc(message) {
+        return new Promise((resolve) => {
+          const id = ++request;
+          pending.set(id, resolve);
+          worker.postMessage({ id, message });
+        });
+      }
+      const syncData = {};
+      window.chrome = {
+        runtime: {
+          getURL: (path) => location.origin + "/" + path,
+          getManifest: () => ({ version: "3.2.0" }),
+          sendMessage: rpc,
+          onMessage: { addListener() {} },
+        },
+        storage: {
+          onChanged: { addListener: (fn) => storageListeners.push(fn) },
+          local: {
+            get: () => rpc({ type: "RAW_GET" }),
+            set: (value) => rpc({ type: "RAW_SET", value }),
+          },
+          sync: {
+            async get() {
+              return { ...syncData };
+            },
+            async set(value) {
+              Object.assign(syncData, value);
+            },
+            async remove(keys) {
+              for (const key of [].concat(keys)) delete syncData[key];
+            },
+          },
+        },
+      };
+      window.fixtureMessages = [];
+      window.fixtureMedia = [];
+      const composer = document.querySelector("footer [contenteditable]");
+      function send() {
+        const text =
+          window.APOISCore?.composerText(composer) || composer.innerText;
+        if (!text.trim()) return;
+        window.fixtureMessages.push(text);
+        const bubble = document.createElement("div");
+        bubble.className = "message-out";
+        bubble.dataset.id =
+          "true_5587999999999@c.us_msg" + window.fixtureMessages.length;
+        bubble.textContent = text;
+        document.querySelector("#messages").appendChild(bubble);
+        composer.textContent = "";
+        composer.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      document.querySelector("footer button").onclick = send;
+      composer.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" && !event.shiftKey && !event.isComposing) {
+          event.preventDefault();
+          send();
+        }
+      });
+      window.fixtureChatId = "5587999999999@c.us";
+      window.WPP = {
+        webpack: { isFullReady: true },
+        chat: {
+          getActiveChat: () => ({ id: { _serialized: window.fixtureChatId } }),
+          async sendTextMessage(id, text) {
+            window.fixtureMessages.push(text);
+            return {
+              id: { _serialized: "api_" + window.fixtureMessages.length },
+            };
+          },
+          async sendFileMessage(id, data, options) {
+            window.fixtureMedia.push({ id, data, options });
+            return {
+              id: { _serialized: "media_" + window.fixtureMedia.length },
+            };
+          },
+          async setInputText(text) {
+            composer.textContent = text;
+          },
+        },
+      };
+    </script>
+    <script src="/src/whatsapp-adapter.js"></script>
+    <script src="/src/main-world.js"></script>
+    <script src="/src/core.js"></script>
+    <script src="/src/storage.js"></script>
+    <script src="/src/diagnostics.js"></script>
+    <script src="/src/content.js"></script>
+  </body>
+</html>

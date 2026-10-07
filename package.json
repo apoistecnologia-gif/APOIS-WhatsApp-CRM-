@@ -1,0 +1,19 @@
+{
+  "name": "apois-crm",
+  "version": "3.2.0",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.cjs",
+    "check": "node scripts/validate.cjs",
+    "lint": "eslint src scripts tests apois-multiconta-bridge/server.mjs",
+    "verify": "npm run check && npm run lint && npm test",
+    "test:bridge": "node tests/bridge.cjs",
+    "test:browser": "node tests/browser.cjs",
+    "format": "prettier --write \"src/*.{js,css}\" \"tests/*.{cjs,js,html}\" \"scripts/*.cjs\" \"apois-multiconta-bridge/*.mjs\""
+  },
+  "devDependencies": {
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9"
+  }
+}

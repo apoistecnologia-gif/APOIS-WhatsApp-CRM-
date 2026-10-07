@@ -1,0 +1,15 @@
+APOIS CRM 3.2.0 — componentes de terceiros
+
+WA-JS 3.18.8
+Copyright 2021 WPPConnect Team
+Apache License 2.0
+Origem: pacote npm oficial @wppconnect/wa-js@3.18.8
+Textos completos: vendor/LICENSE-WA-JS e vendor/wppconnect-wa.js.LICENSE.txt
+Patch: remoção de servidores padrão de prévia externa, documentada em vendor/PATCHES.md.
+
+Baileys 7.0.0-rc14
+Copyright 2025 Rajeh Taher/WhiskeySockets
+MIT License (apois-multiconta-bridge/LICENSE-BAILEYS)
+Express, Pino e QRCode são instalados pelo gerenciador de pacotes com suas respectivas licenças.
+
+O código do fornecedor WHABOOST, incluindo licenciamento, cobrança, seletores remotos e integrações de IA, não é distribuído neste pacote.

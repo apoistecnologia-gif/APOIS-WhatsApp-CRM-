@@ -1,21 +1,72 @@
 {
   "manifest_version": 3,
-  "name": "APOIS WhatsApp CRM",
-  "version": "0.9.0",
-  "description": "CRM local e independente para WhatsApp Web: funil, notas, etiquetas, respostas rápidas, follow-ups, agenda, automações locais, relatórios e backup.",
-  "permissions": ["storage", "notifications", "alarms", "unlimitedStorage"],
-  "host_permissions": ["https://web.whatsapp.com/*"],
-  "background": {"service_worker": "src/background.js"},
-  "content_scripts": [{
-    "matches": ["https://web.whatsapp.com/*"],
-    "js": ["src/storage.js", "src/content.js"],
-    "css": ["src/content.css"],
-    "run_at": "document_idle"
-  }],
-  "action": {
-    "default_title": "Abrir APOIS WhatsApp CRM",
-    "default_icon": {"16": "assets/icon16.png", "32": "assets/icon32.png"}
+  "name": "APOIS CRM",
+  "version": "3.2.0",
+  "description": "CRM local independente: respostas compostas, PTT, etiquetas, atendentes, funil e central multiconta.",
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "http://127.0.0.1:3210/*",
+    "http://localhost:3210/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js"
   },
-  "options_page": "options.html",
-  "icons": {"16": "assets/icon16.png", "32": "assets/icon32.png", "48": "assets/icon48.png", "128": "assets/icon128.png"}
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "src/wa-config.js",
+        "vendor/wa-js-3.18.8.js",
+        "src/whatsapp-adapter.js",
+        "src/main-world.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "src/core.js",
+        "src/storage.js",
+        "src/diagnostics.js",
+        "src/content.js"
+      ],
+      "css": [
+        "src/content.css"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/logo-apois.png"
+      ],
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ]
+    }
+  ],
+  "action": {
+    "default_title": "APOIS Respostas R\u00e1pidas",
+    "default_icon": {
+      "16": "assets/icon16.png",
+      "32": "assets/icon32.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon16.png",
+    "32": "assets/icon32.png",
+    "48": "assets/icon48.png",
+    "128": "assets/icon128.png"
+  }
 }
