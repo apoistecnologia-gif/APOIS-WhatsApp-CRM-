@@ -1,0 +1,15 @@
+APOIS CRM 4.0.0
+
+@wppconnect/wa-js 4.6.1
+Copyright 2021 WPPConnect Team
+Apache License 2.0
+https://github.com/wppconnect-team/wa-js
+The vendor file is copied verbatim from the published package, not from the WHABOOST wrapper.
+Full license and bundled notices: vendor/WA-JS-LICENSE.txt and vendor/wppconnect-wa.js.LICENSE.txt.
+
+Local bridge dependencies are obtained from npm by the installer:
+@whiskeysockets/baileys 7.0.0-rc14 — MIT — https://github.com/WhiskeySockets/Baileys
+pino 9.6.0 — MIT — https://github.com/pinojs/pino
+qrcode 1.5.4 — MIT — https://github.com/soldair/node-qrcode
+@ffmpeg-installer/ffmpeg 1.1.0 — package/license information from the maintainer; FFmpeg binaries carry their build-specific LGPL/GPL licenses — https://github.com/kribblo/node-ffmpeg-installer and https://ffmpeg.org
+No FFmpeg binary is embedded in the extension release. The platform binary is obtained as an upstream npm dependency.

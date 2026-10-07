@@ -1,21 +1,17 @@
 {
-  "manifest_version": 3,
-  "name": "APOIS WhatsApp CRM",
-  "version": "0.9.0",
-  "description": "CRM local e independente para WhatsApp Web: funil, notas, etiquetas, respostas rápidas, follow-ups, agenda, automações locais, relatórios e backup.",
-  "permissions": ["storage", "notifications", "alarms", "unlimitedStorage"],
-  "host_permissions": ["https://web.whatsapp.com/*"],
-  "background": {"service_worker": "src/background.js"},
-  "content_scripts": [{
-    "matches": ["https://web.whatsapp.com/*"],
-    "js": ["src/storage.js", "src/content.js"],
-    "css": ["src/content.css"],
-    "run_at": "document_idle"
-  }],
-  "action": {
-    "default_title": "Abrir APOIS WhatsApp CRM",
-    "default_icon": {"16": "assets/icon16.png", "32": "assets/icon32.png"}
-  },
-  "options_page": "options.html",
-  "icons": {"16": "assets/icon16.png", "32": "assets/icon32.png", "48": "assets/icon48.png", "128": "assets/icon128.png"}
+  "manifest_version":3,
+  "name":"APOIS CRM",
+  "version":"4.0.0",
+  "description":"Respostas compostas, notas de voz, etiquetas, funil e atendentes. CRM local independente com central multiconta opcional.",
+  "permissions":["storage","unlimitedStorage"],
+  "host_permissions":["https://web.whatsapp.com/*","http://127.0.0.1:3210/*"],
+  "background":{"service_worker":"src/background.js","type":"module"},
+  "content_scripts":[
+    {"matches":["https://web.whatsapp.com/*"],"js":["vendor/wppconnect-wa.js","src/main-world.js"],"world":"MAIN","run_at":"document_idle"},
+    {"matches":["https://web.whatsapp.com/*"],"js":["src/content-bootstrap.js"],"run_at":"document_idle"}
+  ],
+  "web_accessible_resources":[{"matches":["https://web.whatsapp.com/*"],"resources":["src/content.js","src/transport.js","src/client.js","src/domain.js","src/manager.js","src/database.js","src/migration.js","src/ui.css"]}],
+  "options_page":"options.html",
+  "action":{"default_title":"Abrir APOIS CRM","default_icon":{"16":"assets/icon16.png","32":"assets/icon32.png"}},
+  "icons":{"16":"assets/icon16.png","32":"assets/icon32.png","48":"assets/icon48.png","128":"assets/icon128.png"}
 }

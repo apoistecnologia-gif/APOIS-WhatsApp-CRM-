@@ -1,0 +1,10 @@
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+const root=fileURLToPath(new URL('..',import.meta.url));
+await fs.mkdir(path.join(root,'vendor'),{recursive:true});
+for(const name of ['wppconnect-wa.js','wppconnect-wa.js.LICENSE.txt'])await fs.copyFile(path.join(root,'node_modules/@wppconnect/wa-js/dist',name),path.join(root,'vendor',name));
+await fs.copyFile(path.join(root,'node_modules/@wppconnect/wa-js/LICENSE'),path.join(root,'vendor','WA-JS-LICENSE.txt'));
+const dist=path.join(root,'dist','apois-crm');await fs.rm(dist,{recursive:true,force:true});await fs.mkdir(dist,{recursive:true});
+for(const name of ['manifest.json','options.html','src','vendor','assets'])await fs.cp(path.join(root,name),path.join(dist,name),{recursive:true});
+console.log('Extensão pronta em dist/apois-crm');

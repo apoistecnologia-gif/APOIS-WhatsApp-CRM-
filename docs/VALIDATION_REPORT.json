@@ -1,0 +1,38 @@
+{
+  "results": [
+    "Browser module harness with actual background handlers and IndexedDB loaded",
+    "Create composite text + PIX reply",
+    "Reordering and IndexedDB persistence on reload",
+    "Labels CRUD",
+    "Diagnostic report generated",
+    "Opening a conversation leaves composer empty",
+    "Signature only at send; native Enter path",
+    "Composite PIX + text sends exactly once and in order",
+    "Media stored and retrieved; direct PTT options sent without preview",
+    "Panel reserves width instead of covering chat",
+    "Open/close and responsive reservation",
+    "Kanban moves conversations with persistent stage",
+    "All discovered independent accounts and QR are visible with no local registration",
+    "Central shows messages for the selected account and chat",
+    "Composite reply sends through selected bridge account",
+    "Two-account transfer performs both messages and records continuation",
+    "Reinjection cleans old listeners and sends one native message"
+  ],
+  "errors": [],
+  "environment": "Chromium headless shell module harness; chrome.runtime simulated; actual background/database/UI modules; WhatsApp API mocked; unpacked loading blocked by AF_UNIX socket restriction",
+  "unitTests": {
+    "passed": 23,
+    "failed": 0
+  },
+  "staticChecks": [
+    "ESLint",
+    "TypeScript contracts",
+    "node --check",
+    "manifest",
+    "imports",
+    "upstream vendor equality"
+  ],
+  "unpacked": "BLOCKED: AF_UNIX process singleton socket",
+  "realWhatsApp": "NOT TESTED",
+  "windowsInstaller": "NOT TESTED"
+}
