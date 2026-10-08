@@ -1,5 +1,27 @@
 # Changelog
 
+## 3.2.4 — 08/10/2026 — validação real pendente, sem ZIP de lançamento
+
+- Assinatura manual segue o fluxo original: leitura do rascunho, nome antes do texto, WPP.chat.sendTextMessage e limpeza pelo WPP.chat.setInputText.
+- Corrige inicialização que aceitava isFullReady=false e encerrava a espera; hidrata conversa depois da prontidão e retenta inicialização indisponível.
+- Preserva quote conforme React Fiber da referência, deduplica RPC e protege novo rascunho.
+- 13 testes de regras/adaptador e teste Chromium com prontidão atrasada aprovados. Ainda não houve teste em sessão real do WhatsApp com esta extensão.
+
+## 3.2.3 — 07/10/2026 — inserção no editor nativo
+
+- Aguarda seleção do editor antes da inserção, usa paste com texto simples e fallback apenas se nenhum handler tratar o evento.
+- Diagnóstico inclui pasteHandled, tipo do editor, tamanhos e matched, sem conteúdo da mensagem.
+- Assinatura sem espaço desnecessário antes da quebra de linha.
+- Teste de navegador simula seleção e modelo internos com atualização atrasada. WhatsApp real ainda requer confirmação.
+
+## 3.2.2 — 07/10/2026 — correção da assinatura manual
+
+- Intercepta Enter/clique antes do envio e aguarda atualização do editor antes de acionar o botão nativo.
+- Verifica texto completo e conversa antes do envio; falhas mantêm o rascunho e mostram erro.
+- Reconhece ícone atual wds-ic-send-filled.
+- Teste de navegador usa modelo interno com commit atrasado; verifica assinatura em Enter/clique e mensagem multilinha.
+- Compatibilidade com WhatsApp real ainda requer confirmação.
+
 ## 3.2.0 — 07/10/2026 — candidata a teste real
 
 - Inventário da referência e documentação dos fluxos reais, backend e licenciamento excluídos.

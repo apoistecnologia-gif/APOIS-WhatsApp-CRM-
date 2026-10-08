@@ -33,6 +33,13 @@
         accountId: state.data?.multiconta?.boundAccountId || "",
         attendantAssigned: !!state.attendantAssigned,
         internalAPI: !!state.referenceReady,
+        internalAPIDetails: {
+          dispatcherResponded: !!state.referenceAdapterAlive,
+          webpackReady: !!state.referenceWebpackReady,
+          activeChatResolved: !!state.referenceActiveChatId,
+          initializationError: redact(state.referenceError),
+        },
+        signatureInsertion: state.lastSignatureInsertion || null,
         localBridge: {
           online: !!state.bridgeOnline,
           error: redact(state.bridgeError),

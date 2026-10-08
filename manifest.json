@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "APOIS CRM",
-  "version": "3.2.0",
+  "version": "3.2.4",
   "description": "CRM local independente: respostas compostas, PTT, etiquetas, atendentes, funil e central multiconta.",
   "permissions": [
     "storage",
@@ -57,7 +57,7 @@
     }
   ],
   "action": {
-    "default_title": "APOIS Respostas R\u00e1pidas",
+    "default_title": "APOIS Respostas Rápidas",
     "default_icon": {
       "16": "assets/icon16.png",
       "32": "assets/icon32.png"
@@ -68,5 +68,6 @@
     "32": "assets/icon32.png",
     "48": "assets/icon48.png",
     "128": "assets/icon128.png"
-  }
+  },
+  "version_name": "3.2.4 — validação real pendente"
 }

@@ -1,3 +1,15 @@
+# 3.2.4 — gate de validação real pendente
+
+13 testes de regras/adaptador aprovados. Chromium fixture verifica prontidão atrasada, assinatura Enter/clique e texto multilinha/emoji. Envio manual chama a API diretamente e não altera o editor antes do envio. Sem envio real comprovado: navegador de teste abriu tela de QR code, sem sessão conectada. Nenhum ZIP de lançamento produzido.
+
+# Assinatura 3.2.3
+
+Fixture de navegador com seleção interna e commit de texto atrasados, evento paste tratado pelo editor, Enter/clique e multiline/emoji. API interna não é necessária nesse fluxo. O teste não comprova compatibilidade com a versão real do WhatsApp.
+
+# Validação da assinatura 3.2.2
+
+Teste em Chromium com editor simulado cujo modelo interno atualiza após 40 ms. O envio lê esse modelo, não o DOM. Verifica assinatura no início em Enter, clique e mensagem multilinha/emoji. Não representa teste de envio no WhatsApp real.
+
 # Validação 3.2.0
 
 ## Evidências automatizadas

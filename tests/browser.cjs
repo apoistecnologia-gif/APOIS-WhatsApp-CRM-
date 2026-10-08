@@ -53,6 +53,12 @@ const server = http.createServer((request, response) => {
   await page.waitForFunction(
     () => window.chrome && document.querySelector("[data-current-attendant]"),
   );
+  // The library becomes ready after the first readiness RPC. Bootstrap must
+  // keep waiting and resolve the actual chat rather than stop on false.
+  await page.waitForFunction(async () => {
+    const data = await chrome.runtime.sendMessage({ type: "RAW_GET" });
+    return !!data.contacts["acc_principal::5587999999999@c.us"];
+  });
   const editor = page.locator("#main footer [contenteditable]");
   assert.equal(await editor.textContent(), "");
   await page.locator("[data-current-attendant]").selectOption("att_franciel");
@@ -64,12 +70,23 @@ const server = http.createServer((request, response) => {
   await page.waitForFunction(() => window.fixtureMessages.length === 1);
   assert.equal(
     await page.evaluate(() => window.fixtureMessages[0]),
-    "*_Franciel:_* \nOlá 🌻",
+    "*_Franciel:_*\nOlá 🌻",
   );
   assert.equal(await editor.textContent(), "");
   await editor.fill("Nova mensagem");
   await page.locator("#main footer button").click();
-  assert.equal(await page.evaluate(() => window.fixtureMessages.length), 2);
+  await page.waitForFunction(() => window.fixtureMessages.length === 2);
+  assert.equal(
+    await page.evaluate(() => window.fixtureMessages[1]),
+    "*_Franciel:_*\nNova mensagem",
+  );
+  await editor.fill("Primeira linha\nSegunda linha 🌻");
+  await editor.press("Enter");
+  await page.waitForFunction(() => window.fixtureMessages.length === 3);
+  assert.equal(
+    await page.evaluate(() => window.fixtureMessages[2]),
+    "*_Franciel:_*\nPrimeira linha\nSegunda linha 🌻",
+  );
   await page.locator('[data-stage="waiting"]').click();
   await page.waitForFunction(async () => {
     const data = await chrome.runtime.sendMessage({ type: "RAW_GET" });
@@ -83,7 +100,8 @@ const server = http.createServer((request, response) => {
   await page.locator('[data-action="manage-settings"]').click();
   const bounds = await page.evaluate(() => ({
     chat: document.querySelector("#app").getBoundingClientRect().right,
-    drawer: document.querySelector(".apois-manager").getBoundingClientRect().left,
+    drawer: document.querySelector(".apois-manager").getBoundingClientRect()
+      .left,
   }));
   assert.ok(bounds.chat <= bounds.drawer + 1, "drawer must reserve its width");
   await page
@@ -95,8 +113,10 @@ const server = http.createServer((request, response) => {
   const diagnostic = JSON.parse(
     await page.evaluate(() => navigator.clipboard.readText()),
   );
-  assert.equal(diagnostic.version, "3.2.0");
+  assert.equal(diagnostic.version, "3.2.4");
   assert.equal(diagnostic.indexedDB.ok, true);
+  assert.equal(diagnostic.internalAPI, true);
+  assert.equal(diagnostic.internalAPIDetails.webpackReady, true);
   await page.locator("button[data-manager-close]").first().click();
   const media = await page.evaluate(() =>
     chrome.runtime.sendMessage({
@@ -149,11 +169,11 @@ const server = http.createServer((request, response) => {
     timeout: 15000,
   });
   assert.equal(
-    await page.evaluate(() => window.fixtureMessages[2]),
-    "*_Franciel:_* \nPrimeira ação",
+    await page.evaluate(() => window.fixtureMessages[3]),
+    "*_Franciel:_*\nPrimeira ação",
   );
   assert.match(
-    await page.evaluate(() => window.fixtureMessages[3]),
+    await page.evaluate(() => window.fixtureMessages[4]),
     /Chave PIX: chave@example.com/,
   );
   assert.equal(
@@ -165,7 +185,7 @@ const server = http.createServer((request, response) => {
     "audio",
   );
   await page.waitForFunction(async () => {
-    const data = await chrome.runtime.sendMessage({type: "RAW_GET"});
+    const data = await chrome.runtime.sendMessage({ type: "RAW_GET" });
     return data.quickReplies[0].useCount === 1;
   });
   await page.locator('[data-action="manage"]').first().click();
@@ -186,13 +206,17 @@ const server = http.createServer((request, response) => {
     path: path.join(root, "docs", "browser-validation.png"),
     fullPage: true,
   });
-  await page.setViewportSize({width: 760, height: 960});
+  await page.setViewportSize({ width: 760, height: 960 });
   const mobile = await page.evaluate(() => ({
     chat: document.querySelector("#app").getBoundingClientRect().bottom,
-    drawer: document.querySelector(".apois-manager").getBoundingClientRect().top,
+    drawer: document.querySelector(".apois-manager").getBoundingClientRect()
+      .top,
   }));
-  assert.ok(mobile.chat <= mobile.drawer + 1, "small viewport must dock below WhatsApp");
-  await page.setViewportSize({width: 1440, height: 960});
+  assert.ok(
+    mobile.chat <= mobile.drawer + 1,
+    "small viewport must dock below WhatsApp",
+  );
+  await page.setViewportSize({ width: 1440, height: 960 });
   await page.reload();
   await page.locator("#apois-root .apois-panel").waitFor();
   assert.equal(await editor.textContent(), "");

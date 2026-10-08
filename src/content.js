@@ -746,7 +746,9 @@
     );
     state.panel?.style.setProperty("--apois-width", `${w}px`);
   }
-  window.addEventListener("resize", applyWhatsAppLayout, {signal: life.signal});
+  window.addEventListener("resize", applyWhatsAppLayout, {
+    signal: life.signal,
+  });
 
   // Motor nativo APOIS:
   // não injeta WA-JS nem depende das APIs internas do WhatsApp.
@@ -812,7 +814,9 @@
 
   function updateReferenceReady() {
     state.referenceReady = !!(
-      state.referenceAdapterAlive && state.referenceActiveChatId
+      state.referenceAdapterAlive &&
+      state.referenceWebpackReady &&
+      state.referenceActiveChatId
     );
   }
 
@@ -872,6 +876,9 @@
       }
 
       if (e.data.action === "webpack.full_ready") {
+        void ensureReferenceAdapter().catch((error) => {
+          state.referenceError = error.message;
+        });
         updateReferenceReady();
         if (state.panel) render();
       }
@@ -905,7 +912,7 @@
   }
 
   async function ensureReferenceAdapter() {
-    if (state.referenceAdapterAlive) return true;
+    if (state.referenceReady) return true;
     if (state.referenceInjecting) return state.referenceInjecting;
 
     state.referenceInjecting = (async () => {
@@ -914,11 +921,22 @@
 
       // MAIN-world scripts are loaded by the MV3 manifest, before this script.
       // The original adapter answers WPP RPC calls as soon as its dispatcher is alive.
-      // We don't require webpack.full_ready as a signature gate.
+      // A responding dispatcher does not mean WhatsApp modules are ready.
       let lastError = "";
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < 100; i++) {
         try {
-          await referenceCall("Webpack", "isFullReady", null, 1800);
+          const ready = await referenceCall(
+            "Webpack",
+            "isFullReady",
+            null,
+            1800,
+          );
+          state.referenceWebpackReady = ready === true;
+          if (!state.referenceWebpackReady) {
+            lastError = "A biblioteca respondeu, mas ainda não está pronta.";
+            await sleep(300);
+            continue;
+          }
           state.referenceAdapterAlive = true;
 
           // If the chat was already open before the listener attached, hydrate once.
@@ -1174,6 +1192,12 @@
         if (state.panel) render();
       });
 
+    managedInterval(() => {
+      if (!state.referenceReady && !state.referenceInjecting)
+        void ensureReferenceAdapter().catch((error) => {
+          state.referenceError = error.message;
+        });
+    }, 5000);
     ensureNativeBridge().catch((e) => {
       state.bridgeState = { ok: false, error: e.message || String(e) };
       console.error("[APOIS native bridge]", e);
@@ -1272,21 +1296,19 @@
     const raw = Core.composerText(input),
       signed = Core.signature(raw, att);
     if (!raw.trim() || signed === raw) return false;
-    const prefix = signed.slice(0, signed.length - raw.length);
     input.focus();
     const range = document.createRange(),
       selection = window.getSelection();
     range.selectNodeContents(input);
-    range.collapse(true);
     selection.removeAllRanges();
     selection.addRange(range);
-    if (!document.execCommand("insertText", false, prefix))
+    if (!document.execCommand("insertText", false, signed))
       throw new Error("Não foi possível inserir a identificação.");
     input.dispatchEvent(
       new InputEvent("input", {
         bubbles: true,
         inputType: "insertText",
-        data: prefix,
+        data: signed,
       }),
     );
     return true;
@@ -1312,7 +1334,9 @@
       if (
         !button ||
         !button.closest("#main footer") ||
-        (!button.querySelector('[data-icon="send"]') &&
+        (!button.querySelector(
+          '[data-icon="send"],[data-icon="wds-ic-send-filled"],[data-icon="send-filled"]',
+        ) &&
           !/enviar|send/i.test(
             button.getAttribute("aria-label") || button.title || "",
           ))
@@ -1326,6 +1350,10 @@
       event.stopImmediatePropagation();
       return;
     }
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    if (state.manualSignedSendBusy) return;
+    state.manualSignedSendBusy = true;
     const before = outgoingIdSet(),
       context = {
         att,
@@ -1333,30 +1361,55 @@
         name: currentChatName(),
         token: conversationToken(),
       };
+    void sendSignedTextThroughAPI(composer, context, before);
+  }
+  async function sendSignedTextThroughAPI(composer, context, before) {
     try {
-      prependAttendantSignature(composer, att);
-      managedTimeout(
-        () =>
-          attributeNextOutgoing(before, 8000, context).catch((error) =>
-            window.APOISDiagnostics.record(error, "atribuição"),
-          ),
-        0,
+      const raw = Core.composerText(composer);
+      const signed = Core.signature(raw, context.att);
+      await ensureReferenceAdapter();
+      assertConversation(context.token);
+      const id = await referenceCall("Chat", "getActiveChat", "@", 1800);
+      if (
+        !id ||
+        getComposer() !== composer ||
+        Core.composerText(composer) !== raw
+      )
+        throw new Error(
+          "A conversa ou o rascunho mudou. O envio foi cancelado.",
+        );
+      const result = await referenceCall("Chat", "sendTxt", {
+        id,
+        msg: signed,
+        clearDraft: true,
+      });
+      if (!result?.accepted)
+        throw new Error(
+          "A API não confirmou o envio. Confira a conversa antes de tentar novamente.",
+        );
+      if (result.clearError)
+        toast(
+          "Mensagem aceita; o campo não pôde ser limpo. Não reenvie o mesmo texto.",
+        );
+      // Attribution is bookkeeping, not part of the send lock.
+      void attributeNextOutgoing(before, 2500, context).catch((error) =>
+        window.APOISDiagnostics.record(error, "atribuição"),
       );
     } catch (error) {
-      event.preventDefault();
-      event.stopImmediatePropagation();
       window.APOISDiagnostics.record(error, "assinatura");
       toast(error.message);
+    } finally {
+      state.manualSignedSendBusy = false;
     }
   }
   function configReferenceSignature() {
     if (state.signatureHandlersBound) return;
     state.signatureHandlersBound = true;
-    document.addEventListener("keydown", captureNativeSignature, {
+    window.addEventListener("keydown", captureNativeSignature, {
       capture: true,
       signal: life.signal,
     });
-    document.addEventListener("click", captureNativeSignature, {
+    window.addEventListener("click", captureNativeSignature, {
       capture: true,
       signal: life.signal,
     });

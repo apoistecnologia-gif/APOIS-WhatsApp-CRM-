@@ -9,7 +9,7 @@
     const name = String(attendant.name)
       .replace(/[\r\n*_]/g, "")
       .trim();
-    return name ? `*_${name}:_* \n${raw}` : raw;
+    return name ? `*_${name}:_*\n${raw}` : raw;
   }
   function composerText(element) {
     if (!element) return "";

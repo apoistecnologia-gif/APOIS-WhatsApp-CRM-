@@ -12,11 +12,11 @@ test("attendant signature keeps empty drafts unchanged and is applied once", () 
   assert.equal(signature("  ", attendant), "  ");
   assert.equal(
     signature("Olá 🌻\nTudo bem?", attendant),
-    "*_Franciel:_* \nOlá 🌻\nTudo bem?",
+    "*_Franciel:_*\nOlá 🌻\nTudo bem?",
   );
   assert.equal(
     signature(signature("Olá", attendant), attendant),
-    "*_Franciel:_* \nOlá",
+    "*_Franciel:_*\nOlá",
   );
   assert.equal(signature("Olá", { name: "Artur", active: false }), "Olá");
 });

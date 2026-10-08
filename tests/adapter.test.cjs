@@ -6,11 +6,23 @@ function adapter() {
   let callback,
     calls = [];
   const responses = [];
+  const composer = { textContent: "mensagem", isConnected: true };
+  const quote = {
+    __reactFiber$test: { memoizedProps: { children: [{ key: "quoted_123" }] } },
+  };
   const win = {
     WPP: {
       webpack: { isFullReady: true },
       chat: {
         getActiveChat: () => ({ id: { _serialized: "one@c.us" } }),
+        async sendTextMessage(id, text, options) {
+          calls.push({ id, text, options });
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          return { id: { _serialized: "text_msg" } };
+        },
+        async setInputText(text) {
+          composer.textContent = text;
+        },
         async sendFileMessage(id, data, options) {
           calls.push({ id, data, options });
           await new Promise((resolve) => setTimeout(resolve, 5));
@@ -24,6 +36,10 @@ function adapter() {
     postMessage: (value) => responses.push(value),
   };
   const context = vm.createContext({
+    document: {
+      querySelector: (selector) =>
+        selector.includes("quoted") ? quote : composer,
+    },
     window: win,
     location: { origin: "https://web.whatsapp.com" },
     console,
@@ -36,6 +52,7 @@ function adapter() {
   );
   return {
     win,
+    composer,
     calls,
     responses,
     request: (data) =>
@@ -83,4 +100,55 @@ test("stale chat and forbidden supplier actions are rejected before sending", as
   assert.equal(a.calls.length, 0);
   assert.match(a.responses[0].error, /conversa mudou/);
   assert.match(a.responses[1].error, /não permitida/);
+});
+
+test("signed text uses the original API flow, keeps quote and deduplicates the send", async () => {
+  const a = adapter();
+  const request = {
+    model: "APOIS_WPP",
+    type: "Chat",
+    action: "sendTxt",
+    id: "apois_ref_signed",
+    dados: {
+      id: "one@c.us",
+      msg: "*_Franciel:_*\nboa noite",
+      clearDraft: true,
+    },
+  };
+  a.request(request);
+  a.request(request);
+  await new Promise((resolve) => setTimeout(resolve, 25));
+  assert.equal(a.calls.length, 1);
+  assert.equal(a.calls[0].text, "*_Franciel:_*\nboa noite");
+  assert.equal(a.calls[0].options.quotedMsg, "quoted_123");
+  assert.equal(a.composer.textContent, "");
+  assert.equal(JSON.parse(a.responses[0].response).accepted, true);
+});
+test("text typed while an API send is in flight is not cleared", async () => {
+  const a = adapter();
+  a.request({
+    model: "APOIS_WPP",
+    type: "Chat",
+    action: "sendTxt",
+    id: "apois_ref_newdraft",
+    dados: { id: "one@c.us", msg: "signed", clearDraft: true },
+  });
+  a.composer.textContent = "outro rascunho";
+  await new Promise((resolve) => setTimeout(resolve, 25));
+  assert.equal(a.composer.textContent, "outro rascunho");
+  assert.equal(a.calls.length, 1);
+});
+test("not-ready API rejects before calling send", async () => {
+  const a = adapter();
+  a.win.WPP.webpack.isFullReady = false;
+  a.request({
+    model: "APOIS_WPP",
+    type: "Chat",
+    action: "sendTxt",
+    id: "apois_ref_notready",
+    dados: { id: "one@c.us", msg: "signed" },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  assert.equal(a.calls.length, 0);
+  assert.match(a.responses[0].error, /ainda não está pronta/);
 });

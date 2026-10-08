@@ -29,12 +29,40 @@
     if (type === "Chat" && action === "sendTxt") {
       if (dados.id !== activeId())
         throw new Error("A conversa mudou antes do envio.");
+      const composer = document.querySelector(
+        '#main footer [contenteditable="true"][role="textbox"]',
+      );
+      const draft = composer?.textContent;
+      const quote = document.querySelector(
+        '#main [data-testid="quoted-message"],#main [data-testid="quoted-msg"],#main .quoted-mention,#main > footer > div:nth-child(3) > div > div:nth-child(4) > div > div > div,#main > footer > div:nth-child(3) > div > div > span > div > div',
+      );
+      const fiberKey = Object.keys(quote || {}).find((key) =>
+        key.startsWith("__reactFiber$"),
+      );
+      const children = quote?.[fiberKey]?.memoizedProps?.children;
+      const quotedMsg = children?.[0]?.key || children?.key || undefined;
       const sent = await wpp.chat.sendTextMessage(
         dados.id,
         String(dados.msg || ""),
-        { waitForAck: false },
+        {
+          waitForAck: false,
+          quotedMsg,
+        },
       );
-      return { id: cleanId(sent?.id), accepted: true };
+      let clearError = "";
+      if (
+        dados.clearDraft &&
+        activeId() === dados.id &&
+        composer?.isConnected &&
+        composer.textContent === draft
+      ) {
+        try {
+          await wpp.chat.setInputText("", dados.id);
+        } catch (error) {
+          clearError = String(error?.message || error);
+        }
+      }
+      return { id: cleanId(sent?.id), accepted: true, clearError };
     }
     if (type === "Chat" && action === "sendMedia") {
       if (dados.id !== activeId())
@@ -55,6 +83,12 @@
   }
 
   if (typeof window.WPP?.on === "function") {
+    window.WPP.on("webpack.full_ready", () => {
+      window.postMessage(
+        { type: "Ev", action: "webpack.full_ready" },
+        location.origin,
+      );
+    });
     window.WPP.on("chat.active_chat", (chat) => {
       const id = cleanId(chat?.id);
       window.postMessage(
